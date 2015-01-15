@@ -12,8 +12,8 @@
  * @link https://codex.wordpress.org/Template_Hierarchy
  *
  * @package WordPress
- * @subpackage Twenty_Fifteen
- * @since Twenty Fifteen 1.0
+ * @subpackage Snow
+ * @since snow 1.0
  */
 
 get_header(); ?>
