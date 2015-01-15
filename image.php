@@ -2,93 +2,81 @@
 /**
  * The template for displaying image attachments
  *
+ * @link http://codex.wordpress.org/Template_Hierarchy
+ *
  * @package WordPress
  * @subpackage Snow
- * @since snow 1.0
+ * @since Snow 1.0
  */
 
 get_header(); ?>
 
 	<div id="primary" class="content-area">
-		<main id="main" class="site-main" role="main">
+		<div id="content" class="site-content" role="main">
+			<article id="post-<?php the_ID(); ?>" <?php post_class( 'image-attachment' ); ?>>
+				<header class="entry-header">
+					<h1 class="entry-title"><?php the_title(); ?></h1>
 
-			<?php
-				// Start the loop.
-				while ( have_posts() ) : the_post();
-			?>
+					<div class="entry-meta">
+						<?php
+							$published_text = __( '<span class="attachment-meta">Published on <time class="entry-date" datetime="%1$s">%2$s</time> in <a href="%3$s" title="Return to %4$s" rel="gallery">%5$s</a></span>', 'twentythirteen' );
+							$post_title = get_the_title( $post->post_parent );
+							if ( empty( $post_title ) || 0 == $post->post_parent )
+								$published_text = '<span class="attachment-meta"><time class="entry-date" datetime="%1$s">%2$s</time></span>';
 
-				<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+							printf( $published_text,
+								esc_attr( get_the_date( 'c' ) ),
+								esc_html( get_the_date() ),
+								esc_url( get_permalink( $post->post_parent ) ),
+								esc_attr( strip_tags( $post_title ) ),
+								$post_title
+							);
 
-					<nav id="image-navigation" class="navigation image-navigation">
-						<div class="nav-links">
-							<div class="nav-previous"><?php previous_image_link( false, __( 'Previous Image', 'twentyfifteen' ) ); ?></div><div class="nav-next"><?php next_image_link( false, __( 'Next Image', 'twentyfifteen' ) ); ?></div>
-						</div><!-- .nav-links -->
-					</nav><!-- .image-navigation -->
+							$metadata = wp_get_attachment_metadata();
+							printf( '<span class="attachment-meta full-size-link"><a href="%1$s" title="%2$s">%3$s (%4$s &times; %5$s)</a></span>',
+								esc_url( wp_get_attachment_url() ),
+								esc_attr__( 'Link to full-size image', 'twentythirteen' ),
+								__( 'Full resolution', 'twentythirteen' ),
+								$metadata['width'],
+								$metadata['height']
+							);
 
-					<header class="entry-header">
-						<?php the_title( '<h1 class="entry-title">', '</h1>' ); ?>
-					</header><!-- .entry-header -->
+							edit_post_link( __( 'Edit', 'twentythirteen' ), '<span class="edit-link">', '</span>' );
+						?>
+					</div><!-- .entry-meta -->
+				</header><!-- .entry-header -->
 
-					<div class="entry-content">
+				<div class="entry-content">
+					<nav id="image-navigation" class="navigation image-navigation" role="navigation">
+						<span class="nav-previous"><?php previous_image_link( false, __( '<span class="meta-nav">&larr;</span> Previous', 'twentythirteen' ) ); ?></span>
+						<span class="nav-next"><?php next_image_link( false, __( 'Next <span class="meta-nav">&rarr;</span>', 'twentythirteen' ) ); ?></span>
+					</nav><!-- #image-navigation -->
 
-						<div class="entry-attachment">
-							<?php
-								/**
-								 * Filter the default Twenty Fifteen image attachment size.
-								 *
-								 * @since Twenty Fifteen 1.0
-								 *
-								 * @param string $image_size Image size. Default 'large'.
-								 */
-								$image_size = apply_filters( 'twentyfifteen_attachment_size', 'large' );
-
-								echo wp_get_attachment_image( get_the_ID(), $image_size );
-							?>
+					<div class="entry-attachment">
+						<div class="attachment">
+							<?php twentythirteen_the_attached_image(); ?>
 
 							<?php if ( has_excerpt() ) : ?>
-								<div class="entry-caption">
-									<?php the_excerpt(); ?>
-								</div><!-- .entry-caption -->
+							<div class="entry-caption">
+								<?php the_excerpt(); ?>
+							</div>
 							<?php endif; ?>
+						</div><!-- .attachment -->
+					</div><!-- .entry-attachment -->
 
-						</div><!-- .entry-attachment -->
+					<?php if ( ! empty( $post->post_content ) ) : ?>
+					<div class="entry-description">
+						<?php the_content(); ?>
+						<?php wp_link_pages( array( 'before' => '<div class="page-links">' . __( 'Pages:', 'twentythirteen' ), 'after' => '</div>' ) ); ?>
+					</div><!-- .entry-description -->
+					<?php endif; ?>
 
-						<?php
-							the_content();
-							wp_link_pages( array(
-								'before'      => '<div class="page-links"><span class="page-links-title">' . __( 'Pages:', 'twentyfifteen' ) . '</span>',
-								'after'       => '</div>',
-								'link_before' => '<span>',
-								'link_after'  => '</span>',
-								'pagelink'    => '<span class="screen-reader-text">' . __( 'Page', 'twentyfifteen' ) . ' </span>%',
-								'separator'   => '<span class="screen-reader-text">, </span>',
-							) );
-						?>
-					</div><!-- .entry-content -->
+				</div><!-- .entry-content -->
+			</article><!-- #post -->
 
-					<footer class="entry-footer">
-						<?php twentyfifteen_entry_meta(); ?>
-						<?php edit_post_link( __( 'Edit', 'twentyfifteen' ), '<span class="edit-link">', '</span>' ); ?>
-					</footer><!-- .entry-footer -->
+			<?php comments_template(); ?>
 
-				</article><!-- #post-## -->
-
-				<?php
-					// If comments are open or we have at least one comment, load up the comment template
-					if ( comments_open() || get_comments_number() ) :
-						comments_template();
-					endif;
-
-					// Previous/next post navigation.
-					the_post_navigation( array(
-						'prev_text' => _x( '<span class="meta-nav">Published in</span><span class="post-title">%title</span>', 'Parent post link', 'twentyfifteen' ),
-					) );
-
-				// End the loop.
-				endwhile;
-			?>
-
-		</main><!-- .site-main -->
-	</div><!-- .content-area -->
+		</div><!-- #content -->
+	</div><!-- #primary -->
 
 <?php get_footer(); ?>

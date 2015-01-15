@@ -1,157 +1,114 @@
 <?php
 /**
- * Custom Header functionality for Twenty Fifteen
+ * Implement a custom header for Twenty Thirteen
+ *
+ * @link http://codex.wordpress.org/Custom_Headers
  *
  * @package WordPress
- * @subpackage Twenty_Fifteen
- * @since Twenty Fifteen 1.0
+ * @subpackage Twenty_Thirteen
+ * @since Twenty Thirteen 1.0
  */
 
 /**
- * Set up the WordPress core custom header feature.
+ * Set up the WordPress core custom header arguments and settings.
  *
- * @uses twentyfifteen_header_style()
+ * @uses add_theme_support() to register support for 3.4 and up.
+ * @uses twentythirteen_header_style() to style front-end.
+ * @uses twentythirteen_admin_header_style() to style wp-admin form.
+ * @uses twentythirteen_admin_header_image() to add custom markup to wp-admin form.
+ * @uses register_default_headers() to set up the bundled header images.
+ *
+ * @since Twenty Thirteen 1.0
  */
-function twentyfifteen_custom_header_setup() {
-	$color_scheme        = twentyfifteen_get_color_scheme();
-	$default_text_color  = trim( $color_scheme[4], '#' );
+function twentythirteen_custom_header_setup() {
+	$args = array(
+		// Text color and image (empty to use none).
+		'default-text-color'     => '220e10',
+		'default-image'          => '%s/images/headers/circle.png',
 
-	/**
-	 * Filter Twenty Fifteen custom-header support arguments.
-	 *
-	 * @since Twenty Fifteen 1.0
-	 *
-	 * @param array $args {
-	 *     An array of custom-header support arguments.
-	 *
-	 *     @type string $default_text_color     Default color of the header text.
-	 *     @type int    $width                  Width in pixels of the custom header image. Default 954.
-	 *     @type int    $height                 Height in pixels of the custom header image. Default 1300.
-	 *     @type string $wp-head-callback       Callback function used to styles the header image and text
-	 *                                          displayed on the blog.
-	 * }
+		// Set height and width, with a maximum value for the width.
+		'height'                 => 230,
+		'width'                  => 1600,
+
+		// Callbacks for styling the header and the admin preview.
+		'wp-head-callback'       => 'twentythirteen_header_style',
+		'admin-head-callback'    => 'twentythirteen_admin_header_style',
+		'admin-preview-callback' => 'twentythirteen_admin_header_image',
+	);
+
+	add_theme_support( 'custom-header', $args );
+
+	/*
+	 * Default custom headers packaged with the theme.
+	 * %s is a placeholder for the theme template directory URI.
 	 */
-	add_theme_support( 'custom-header', apply_filters( 'twentyfifteen_custom_header_args', array(
-		'default-text-color'     => $default_text_color,
-		'width'                  => 954,
-		'height'                 => 1300,
-		'wp-head-callback'       => 'twentyfifteen_header_style',
-	) ) );
+	register_default_headers( array(
+		'circle' => array(
+			'url'           => '%s/images/headers/circle.png',
+			'thumbnail_url' => '%s/images/headers/circle-thumbnail.png',
+			'description'   => _x( 'Circle', 'header image description', 'twentythirteen' )
+		),
+		'diamond' => array(
+			'url'           => '%s/images/headers/diamond.png',
+			'thumbnail_url' => '%s/images/headers/diamond-thumbnail.png',
+			'description'   => _x( 'Diamond', 'header image description', 'twentythirteen' )
+		),
+		'star' => array(
+			'url'           => '%s/images/headers/star.png',
+			'thumbnail_url' => '%s/images/headers/star-thumbnail.png',
+			'description'   => _x( 'Star', 'header image description', 'twentythirteen' )
+		),
+	) );
 }
-add_action( 'after_setup_theme', 'twentyfifteen_custom_header_setup' );
+add_action( 'after_setup_theme', 'twentythirteen_custom_header_setup', 11 );
 
 /**
- * Convert HEX to RGB.
+ * Load our special font CSS files.
  *
- * @since Twenty Fifteen 1.0
- *
- * @param string $color The original color, in 3- or 6-digit hexadecimal form.
- * @return array Array containing RGB (red, green, and blue) values for the given
- *               HEX code, empty array otherwise.
+ * @since Twenty Thirteen 1.0
  */
-function twentyfifteen_hex2rgb( $color ) {
-	$color = trim( $color, '#' );
+function twentythirteen_custom_header_fonts() {
+	// Add Source Sans Pro and Bitter fonts.
+	wp_enqueue_style( 'twentythirteen-fonts', twentythirteen_fonts_url(), array(), null );
 
-	if ( strlen( $color ) == 3 ) {
-		$r = hexdec( substr( $color, 0, 1 ).substr( $color, 0, 1 ) );
-		$g = hexdec( substr( $color, 1, 1 ).substr( $color, 1, 1 ) );
-		$b = hexdec( substr( $color, 2, 1 ).substr( $color, 2, 1 ) );
-	} else if ( strlen( $color ) == 6 ) {
-		$r = hexdec( substr( $color, 0, 2 ) );
-		$g = hexdec( substr( $color, 2, 2 ) );
-		$b = hexdec( substr( $color, 4, 2 ) );
-	} else {
-		return array();
-	}
-
-	return array( 'red' => $r, 'green' => $g, 'blue' => $b );
+	// Add Genericons font.
+	wp_enqueue_style( 'genericons', get_template_directory_uri() . '/genericons/genericons.css', array(), '3.03' );
 }
+add_action( 'admin_print_styles-appearance_page_custom-header', 'twentythirteen_custom_header_fonts' );
 
-if ( ! function_exists( 'twentyfifteen_header_style' ) ) :
 /**
- * Styles the header image and text displayed on the blog.
+ * Style the header text displayed on the blog.
  *
- * @since Twenty Fifteen 1.0
+ * get_header_textcolor() options: Hide text (returns 'blank'), or any hex value.
  *
- * @see twentyfifteen_custom_header_setup()
+ * @since Twenty Thirteen 1.0
  */
-function twentyfifteen_header_style() {
+function twentythirteen_header_style() {
 	$header_image = get_header_image();
+	$text_color   = get_header_textcolor();
 
 	// If no custom options for text are set, let's bail.
-	if ( empty( $header_image ) && display_header_text() ) {
+	if ( empty( $header_image ) && $text_color == get_theme_support( 'custom-header', 'default-text-color' ) )
 		return;
-	}
 
-	// If we get this far, we have custom styles. Let's do this.
+	// If we get this far, we have custom styles.
 	?>
-	<style type="text/css" id="twentyfifteen-header-css">
+	<style type="text/css" id="twentythirteen-header-css">
 	<?php
-		// Short header for when there is no Custom Header and Header Text is hidden.
-		if ( empty( $header_image ) && ! display_header_text() ) :
-	?>
-		.site-header {
-			padding-top: 14px;
-			padding-bottom: 14px;
-		}
-
-		.site-branding {
-			min-height: 42px;
-		}
-
-		@media screen and (min-width: 46.25em) {
-			.site-header {
-				padding-top: 21px;
-				padding-bottom: 21px;
-			}
-			.site-branding {
-				min-height: 56px;
-			}
-		}
-		@media screen and (min-width: 55em) {
-			.site-header {
-				padding-top: 25px;
-				padding-bottom: 25px;
-			}
-			.site-branding {
-				min-height: 62px;
-			}
-		}
-		@media screen and (min-width: 59.6875em) {
-			.site-header {
-				padding-top: 0;
-				padding-bottom: 0;
-			}
-			.site-branding {
-				min-height: 0;
-			}
-		}
-	<?php
-		endif;
-
-		// Has a Custom Header been added?
 		if ( ! empty( $header_image ) ) :
 	?>
 		.site-header {
-			background: url(<?php header_image(); ?>) no-repeat 50% 50%;
-			-webkit-background-size: cover;
-			-moz-background-size:    cover;
-			-o-background-size:      cover;
-			background-size:         cover;
+			background: url(<?php header_image(); ?>) no-repeat scroll top;
+			background-size: 1600px auto;
 		}
-
-		@media screen and (min-width: 59.6875em) {
-			body:before {
-				background: url(<?php header_image(); ?>) no-repeat 100% 50%;
-				-webkit-background-size: cover;
-				-moz-background-size:    cover;
-				-o-background-size:      cover;
-				background-size:         cover;
-				border-right: 0;
-			}
-
+		@media (max-width: 767px) {
 			.site-header {
-				background: transparent;
+				background-size: 768px auto;
+			}
+		}
+		@media (max-width: 359px) {
+			.site-header {
+				background-size: 360px auto;
 			}
 		}
 	<?php
@@ -162,195 +119,109 @@ function twentyfifteen_header_style() {
 	?>
 		.site-title,
 		.site-description {
-			clip: rect(1px, 1px, 1px, 1px);
 			position: absolute;
+			clip: rect(1px 1px 1px 1px); /* IE7 */
+			clip: rect(1px, 1px, 1px, 1px);
+		}
+	<?php
+			if ( empty( $header_image ) ) :
+	?>
+		.site-header .home-link {
+			min-height: 0;
+		}
+	<?php
+			endif;
+
+		// If the user has set a custom color for the text, use that.
+		elseif ( $text_color != get_theme_support( 'custom-header', 'default-text-color' ) ) :
+	?>
+		.site-title,
+		.site-description {
+			color: #<?php echo esc_attr( $text_color ); ?>;
 		}
 	<?php endif; ?>
 	</style>
 	<?php
 }
-endif; // twentyfifteen_header_style
 
 /**
- * Enqueues front-end CSS for the header background color.
+ * Style the header image displayed on the Appearance > Header admin panel.
  *
- * @since Twenty Fifteen 1.0
- *
- * @see wp_add_inline_style()
+ * @since Twenty Thirteen 1.0
  */
-function twentyfifteen_header_background_color_css() {
-	$color_scheme            = twentyfifteen_get_color_scheme();
-	$default_color           = $color_scheme[1];
-	$header_background_color = get_theme_mod( 'header_background_color', $default_color );
-
-	// Don't do anything if the current color is the default.
-	if ( $header_background_color === $default_color ) {
-		return;
+function twentythirteen_admin_header_style() {
+	$header_image = get_header_image();
+?>
+	<style type="text/css" id="twentythirteen-admin-header-css">
+	.appearance_page_custom-header #headimg {
+		border: none;
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing:    border-box;
+		box-sizing:         border-box;
+		<?php
+		if ( ! empty( $header_image ) ) {
+			echo 'background: url(' . esc_url( $header_image ) . ') no-repeat scroll top; background-size: 1600px auto;';
+		} ?>
+		padding: 0 20px;
 	}
-
-	$css = '
-		/* Custom Header Background Color */
-		body:before,
-		.site-header {
-			background-color: %1$s;
-		}
-
-		@media screen and (min-width: 59.6875em) {
-			.site-header,
-			.secondary {
-				background-color: transparent;
-			}
-
-			.widget button,
-			.widget input[type="button"],
-			.widget input[type="reset"],
-			.widget input[type="submit"],
-			.widget_calendar tbody a,
-			.widget_calendar tbody a:hover,
-			.widget_calendar tbody a:focus {
-				color: %1$s;
-			}
-		}
-	';
-
-	wp_add_inline_style( 'twentyfifteen-style', sprintf( $css, $header_background_color ) );
+	#headimg .home-link {
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing:    border-box;
+		box-sizing:         border-box;
+		margin: 0 auto;
+		max-width: 1040px;
+		<?php
+		if ( ! empty( $header_image ) || display_header_text() ) {
+			echo 'min-height: 230px;';
+		} ?>
+		width: 100%;
+	}
+	<?php if ( ! display_header_text() ) : ?>
+	#headimg h1,
+	#headimg h2 {
+		position: absolute !important;
+		clip: rect(1px 1px 1px 1px); /* IE7 */
+		clip: rect(1px, 1px, 1px, 1px);
+	}
+	<?php endif; ?>
+	#headimg h1 {
+		font: bold 60px/1 Bitter, Georgia, serif;
+		margin: 0;
+		padding: 58px 0 10px;
+	}
+	#headimg h1 a {
+		text-decoration: none;
+	}
+	#headimg h1 a:hover {
+		text-decoration: underline;
+	}
+	#headimg h2 {
+		font: 200 italic 24px "Source Sans Pro", Helvetica, sans-serif;
+		margin: 0;
+		text-shadow: none;
+	}
+	.default-header img {
+		max-width: 230px;
+		width: auto;
+	}
+	</style>
+<?php
 }
-add_action( 'wp_enqueue_scripts', 'twentyfifteen_header_background_color_css', 11 );
 
 /**
- * Enqueues front-end CSS for the sidebar text color.
+ * Output markup to be displayed on the Appearance > Header admin panel.
  *
- * @since Twenty Fifteen 1.0
+ * This callback overrides the default markup displayed there.
+ *
+ * @since Twenty Thirteen 1.0
  */
-function twentyfifteen_sidebar_text_color_css() {
-	$color_scheme       = twentyfifteen_get_color_scheme();
-	$default_color      = $color_scheme[4];
-	$sidebar_link_color = get_theme_mod( 'sidebar_textcolor', $default_color );
-
-	// Don't do anything if the current color is the default.
-	if ( $sidebar_link_color === $default_color ) {
-		return;
-	}
-
-	// If we get this far, we have custom styles. Let's do this.
-	$sidebar_link_color_rgb     = twentyfifteen_hex2rgb( $sidebar_link_color );
-	$sidebar_text_color         = vsprintf( 'rgba( %1$s, %2$s, %3$s, 0.7)', $sidebar_link_color_rgb );
-	$sidebar_border_color       = vsprintf( 'rgba( %1$s, %2$s, %3$s, 0.1)', $sidebar_link_color_rgb );
-	$sidebar_border_focus_color = vsprintf( 'rgba( %1$s, %2$s, %3$s, 0.3)', $sidebar_link_color_rgb );
-
-	$css = '
-		/* Custom Sidebar Text Color */
-		.site-title a,
-		.site-description,
-		.secondary-toggle:before {
-			color: %1$s;
-		}
-
-		.site-title a:hover,
-		.site-title a:focus {
-			color: %1$s; /* Fallback for IE7 and IE8 */
-			color: %2$s;
-		}
-
-		.secondary-toggle {
-			border-color: %1$s; /* Fallback for IE7 and IE8 */
-			border-color: %3$s;
-		}
-
-		.secondary-toggle:hover,
-		.secondary-toggle:focus {
-			border-color: %1$s; /* Fallback for IE7 and IE8 */
-			border-color: %4$s;
-		}
-
-		.site-title a {
-			outline-color: %1$s; /* Fallback for IE7 and IE8 */
-			outline-color: %4$s;
-		}
-
-		@media screen and (min-width: 59.6875em) {
-			.secondary a,
-			.dropdown-toggle:after,
-			.widget-title,
-			.widget blockquote cite,
-			.widget blockquote small {
-				color: %1$s;
-			}
-
-			.widget button,
-			.widget input[type="button"],
-			.widget input[type="reset"],
-			.widget input[type="submit"],
-			.widget_calendar tbody a {
-				background-color: %1$s;
-			}
-
-			.textwidget a {
-				border-color: %1$s;
-			}
-
-			.secondary a:hover,
-			.secondary a:focus,
-			.main-navigation .menu-item-description,
-			.widget,
-			.widget blockquote,
-			.widget .wp-caption-text,
-			.widget .gallery-caption {
-				color: %2$s;
-			}
-
-			.widget button:hover,
-			.widget button:focus,
-			.widget input[type="button"]:hover,
-			.widget input[type="button"]:focus,
-			.widget input[type="reset"]:hover,
-			.widget input[type="reset"]:focus,
-			.widget input[type="submit"]:hover,
-			.widget input[type="submit"]:focus,
-			.widget_calendar tbody a:hover,
-			.widget_calendar tbody a:focus {
-				background-color: %2$s;
-			}
-
-			.widget blockquote {
-				border-color: %2$s;
-			}
-
-			.main-navigation ul,
-			.main-navigation li,
-			.secondary-toggle,
-			.widget input,
-			.widget textarea,
-			.widget table,
-			.widget th,
-			.widget td,
-			.widget pre,
-			.widget li,
-			.widget_categories .children,
-			.widget_nav_menu .sub-menu,
-			.widget_pages .children,
-			.widget abbr[title] {
-				border-color: %3$s;
-			}
-
-			.dropdown-toggle:hover,
-			.dropdown-toggle:focus,
-			.widget hr {
-				background-color: %3$s;
-			}
-
-			.widget input:focus,
-			.widget textarea:focus {
-				border-color: %4$s;
-			}
-
-			.sidebar a:focus,
-			.dropdown-toggle:focus {
-				outline-color: %4$s;
-			}
-		}
-	';
-
-	wp_add_inline_style( 'twentyfifteen-style', sprintf( $css, $sidebar_link_color, $sidebar_text_color, $sidebar_border_color, $sidebar_border_focus_color ) );
-}
-add_action( 'wp_enqueue_scripts', 'twentyfifteen_sidebar_text_color_css', 11 );
+function twentythirteen_admin_header_image() {
+	?>
+	<div id="headimg" style="background: url(<?php header_image(); ?>) no-repeat scroll top; background-size: 1600px auto;">
+		<?php $style = ' style="color:#' . get_header_textcolor() . ';"'; ?>
+		<div class="home-link">
+			<h1 class="displaying-header-text"><a id="name"<?php echo $style; ?> onclick="return false;" href="#" tabindex="-1"><?php bloginfo( 'name' ); ?></a></h1>
+			<h2 id="desc" class="displaying-header-text"<?php echo $style; ?>><?php bloginfo( 'description' ); ?></h2>
+		</div>
+	</div>
+<?php }

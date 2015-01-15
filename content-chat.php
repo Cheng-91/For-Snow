@@ -1,6 +1,6 @@
 <?php
 /**
- * The template for displaying posts in the Link post format
+ * The template for displaying posts in the Chat post format
  *
  * @package WordPress
  * @subpackage Snow
@@ -10,14 +10,13 @@
 
 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 	<header class="entry-header">
+		<?php if ( is_single() ) : ?>
+		<h1 class="entry-title"><?php the_title(); ?></h1>
+		<?php else : ?>
 		<h1 class="entry-title">
-			<a href="<?php echo esc_url( twentythirteen_get_link_url() ); ?>"><?php the_title(); ?></a>
+			<a href="<?php the_permalink(); ?>" rel="bookmark"><?php the_title(); ?></a>
 		</h1>
-
-		<div class="entry-meta">
-			<?php twentythirteen_entry_date(); ?>
-			<?php edit_post_link( __( 'Edit', 'twentythirteen' ), '<span class="edit-link">', '</span>' ); ?>
-		</div><!-- .entry-meta -->
+		<?php endif; // is_single() ?>
 	</header><!-- .entry-header -->
 
 	<div class="entry-content">
@@ -32,12 +31,8 @@
 		?>
 	</div><!-- .entry-content -->
 
-	<?php if ( is_single() ) : ?>
 	<footer class="entry-meta">
 		<?php twentythirteen_entry_meta(); ?>
-		<?php if ( get_the_author_meta( 'description' ) && is_multi_author() ) : ?>
-			<?php get_template_part( 'author-bio' ); ?>
-		<?php endif; ?>
+		<?php edit_post_link( __( 'Edit', 'twentythirteen' ), '<span class="edit-link">', '</span>' ); ?>
 	</footer><!-- .entry-meta -->
-	<?php endif; // is_single() ?>
 </article><!-- #post -->
